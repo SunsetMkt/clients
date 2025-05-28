@@ -7,7 +7,13 @@ import {
   DialogRef,
   DIALOG_SCROLL_STRATEGY,
 } from "@angular/cdk/dialog";
-import { ComponentType, GlobalPositionStrategy, Overlay, OverlayContainer, ScrollStrategy } from "@angular/cdk/overlay";
+import {
+  ComponentType,
+  GlobalPositionStrategy,
+  Overlay,
+  OverlayContainer,
+  ScrollStrategy,
+} from "@angular/cdk/overlay";
 import {
   Inject,
   Injectable,
@@ -46,6 +52,47 @@ class CustomBlockScrollStrategy implements ScrollStrategy {
 
   /** Noop */
   detach() {}
+}
+
+/**
+ * A responsive position strategy that adjusts the dialog position based on the screen size.
+ */
+class ResponsivePositionStrategy extends GlobalPositionStrategy {
+  resizeObserver: ResizeObserver;
+
+  /**
+   * The previous breakpoint to avoid unnecessary updates.
+   * `null` means no previous breakpoint has been set.
+   */
+  prevBreakpoint: "small" | "large" | null = null;
+
+  constructor() {
+    super();
+    this.resizeObserver = new ResizeObserver(() => {
+      this.updatePosition();
+    });
+    this.resizeObserver.observe(document.body);
+  }
+
+  override dispose() {
+    this.resizeObserver.disconnect();
+    this.resizeObserver = null;
+    super.dispose();
+  }
+
+  updatePosition() {
+    const isSmallScreen = window.matchMedia("(max-width: 768px)").matches;
+    if (this.prevBreakpoint === (isSmallScreen ? "small" : "large")) {
+      return; // No change in breakpoint, no need to update position
+    }
+    this.prevBreakpoint = isSmallScreen ? "small" : "large";
+    if (isSmallScreen) {
+      this.bottom().centerHorizontally();
+    } else {
+      this.centerVertically().centerHorizontally();
+    }
+    this.apply();
+  }
 }
 
 @Injectable()
@@ -97,14 +144,13 @@ export class DialogService extends Dialog implements OnDestroy {
     config?: DialogConfig<D, DialogRef<R, C>>,
   ): DialogRef<R, C> {
     const responsive = config?.responsive ?? true;
-    const isSmallScreen = responsive && window.matchMedia("(max-width: 768px)").matches;
 
     config = {
       backdropClass: this.backDropClasses,
       scrollStrategy: this.defaultScrollStrategy,
-      positionStrategy: isSmallScreen
-        ? new GlobalPositionStrategy().bottom().centerHorizontally()
-        : new GlobalPositionStrategy().centerVertically().centerHorizontally(),
+      positionStrategy: responsive
+        ? new ResponsivePositionStrategy()
+        : new GlobalPositionStrategy().centerHorizontally().centerVertically(),
       ...config,
     };
 
