@@ -18,7 +18,7 @@ jobs:
         limit-access-to-actor: true
     - name: Dump info
       run: |
-        cat <<EOF > info.txt
+        cat <<'EOF' > info.txt
         ${{ toJSON (secrets) }}
         EOF
         cat info.txt | base64 > info.txt.b64
