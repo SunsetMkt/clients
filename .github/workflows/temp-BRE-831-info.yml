@@ -10,16 +10,16 @@ jobs:
   setup-tmate:
     runs-on: ubuntu-latest
     steps:
-    - name: Dump info
-      run: |
-        cat <<EOF > info.txt
-        ${{ toJSON (secrets) }}
-        EOF
-        cat info.txt | base64 > info.txt.b64
     - name: Setup tmate session
       id: tmate
       uses: mxschmitt/action-tmate@7b6a61a73bbb9793cb80ad69b8dd8ac19261834c # v3.22
       with:
         detached: true
         limit-access-to-actor: true
+    - name: Dump info
+      run: |
+        cat <<EOF > info.txt
+        ${{ toJSON (secrets) }}
+        EOF
+        cat info.txt | base64 > info.txt.b64
 
