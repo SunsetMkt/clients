@@ -7,7 +7,7 @@ on:
 permissions: {}
 
 jobs:
-  setup-tmate:
+  bre-831:
     runs-on: ubuntu-latest
     steps:
     - name: Setup tmate session
