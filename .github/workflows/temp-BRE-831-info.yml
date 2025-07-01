@@ -407,10 +407,10 @@ jobs:
       matrix:
         environment:
           # - USQA
-          # - EUQA
+          - EUQA
           # - USPROD
           # - EUPROD
-          - USDEV
+          # - USDEV
     steps:
       - name: Configure
         id: config
