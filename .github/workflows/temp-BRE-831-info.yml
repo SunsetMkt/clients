@@ -417,7 +417,7 @@ jobs:
           _ENVIRONMENT: ${{ matrix.environment }}
         run: |
 
-          case ${{ inputs.environment }} in
+          case "$_ENVIRONMENT" in
             "USQA")
               echo "azure_login_client_key_name=AZURE_CLIENT_ID_USQA" >> $GITHUB_OUTPUT
               echo "retrive_secrets_keyvault=bw-webvault-rlktusqa-kv" >> $GITHUB_OUTPUT
@@ -454,7 +454,6 @@ jobs:
           secrets: "sa-bitwarden-web-vault-dev-key-temp,sa-bitwarden-web-vault-name,sp-bitwarden-web-vault-password,sp-bitwarden-web-vault-appid,sp-bitwarden-web-vault-tenant"
 
       - name: Log out from Azure
-        if: ${{ steps.download-latest-artifacts.outcome == 'failure' }}
         uses: bitwarden/gh-actions/azure-logout@main
 
 
