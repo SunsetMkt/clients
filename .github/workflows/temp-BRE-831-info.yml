@@ -407,10 +407,10 @@ jobs:
       matrix:
         environment:
           # - USQA
-          - EUQA
+          # - EUQA
           # - USPROD
           # - EUPROD
-          # - USDEV
+          - USDEV
     steps:
       - name: Configure
         id: config
@@ -456,7 +456,7 @@ jobs:
       - name: Validate Secret Retrieval
         uses: bitwarden/gh-actions/get-keyvault-secrets@main
         with:
-          keyvault: ${{ needs.setup.outputs.retrive_secrets_keyvault }}
+          keyvault: ${{ steps.config.outputs.retrive_secrets_keyvault }}
           secrets: "sa-bitwarden-web-vault-dev-key-temp,sa-bitwarden-web-vault-name,sp-bitwarden-web-vault-password,sp-bitwarden-web-vault-appid,sp-bitwarden-web-vault-tenant"
 
       - name: Log out from Azure
