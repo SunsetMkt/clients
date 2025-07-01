@@ -99,10 +99,29 @@ jobs:
           fi
           echo "CHECK_ACR=${check_acr}" >> $GITHUB_OUTPUT
 
+
+          storage_account_containers=""
+          case "$repo" in
+            android|f-droid)
+              storage_account_containers="mobile"
+              ;;
+            clients)
+              storage_account_containers="profiles"
+              ;;
+            ios)
+              storage_account_containers="profiles mobile"
+              ;;
+            mobile-learning-sandbox)
+              storage_account_containers="profiles"
+              ;;
+          esac
+          echo "STORAGE_CONTAINERS=${storage_account_containers}" >> $GITHUB_OUTPUT
+
           echo "Repo Name: "$repo"
           echo "Key Vault Name: "$key_vault"
           echo "Check CI KV: $check_ci_kv"
           echo "Check ACR: $check_acr"
+          echo "Storage Containers: $storage_account_containers"
 
       - name: Azure Login
         id: azure-login
@@ -138,7 +157,7 @@ jobs:
         if: ${{ github.repository == 'bitwarden/fastly-compute' }}
         run: |
 
-      - name: ACR Validation
+      - name: ACR Login Validation
         if: ${{ steps.setup.outputs.CHECK_ACR == 'true' }}
         run: |
           az acr login -n bitwardenprod
@@ -218,11 +237,225 @@ jobs:
           done
           exit $exit_code
 
+      - name: Validate Storage accounts
+        if: ${{ steps.setup.outputs.STORAGE_CONTAINERS != '' }}
+        env:
+          CONTAINER_NAMES: ${{ steps.setup.outputs.STORAGE_CONTAINERS }}
+        run: |
+          for container_name in $CONTAINER_NAMES; do
+            echo "Validating read access to container '$container_name' in storage account '$ACCOUNT_NAME'..."
+            case "$container_name" in
+                mobile)
+                    az storage blob exists --account-name bitwardenci --container-name mobile --name store_fdroid-keystore.jks --output none
+                    ;;
+                profiles)
+                    az storage blob exists --account-name bitwardenci --container-name profiles --name dist_authenticator.mobileprovision --output none
+                    ;;
+                *)
+                    echo "    Unknown container: $container_name"
+                    exit 1
+                    ;;
+            esac
+          done
+
       - name: Azure Logout
         uses: bitwarden/gh-actions/azure-logout@main
 
 
+  bre-831-validate-pwdless-devops:
+    name: BRE-831 Validate Passwordless DevOps
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+    if: ${{ github.repository == 'bitwarden/passwordless-devops' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - Api
+          - AdminConsole
+        environment:
+          - devtest
+          - qa
+          #- prod
+    steps:
+      - name: Setup Azure Key Vault Name
+        id: setup
+        env:
+          _ENVIRONMENT: ${{ matrix.environment}}
+          _APP_NAME: ${{ matrix.app }}
+        run: |
+          keyvaultPrefix=""
+          keyvaultSuffix=""
+          case "$_ENVIRONMENT" in
+            "devtest")
+              keyvaultPrefix="gh-pwdless-devtest"
+              client_id_name="AZURE_CLIENT_ID_DEVTEST"
+              ;;
+            "qa")
+              keyvaultPrefix="gh-pwdless-qa"
+              client_id_name="AZURE_CLIENT_ID_QA"
+              ;;
+            "prod")
+              keyvaultPrefix="gh-pwdless-prod"
+              client_id_name="AZURE_CLIENT_ID_PROD"
+              ;;
+            *)
+              echo "Unknown environment: _ENVIRONMENT"
+              exit 1
+              ;;
+          esac
 
+          case "$_APP_NAME" in
+            "Api")
+              keyvaultSuffix="-api"
+              ;;
+            "AdminConsole")
+              keyvaultSuffix="-adm"
+              ;;
+            *)
+              echo "Unknown app: $_APP_NAME"
+              exit 1
+              ;;
+          esac
+
+          keyvault="${keyvaultPrefix}${keyvaultSuffix}"
+          echo "Key Vault Name: $keyvault"
+          echo "Client ID Name: $client_id_name"
+
+          echo "keyvault=$keyvault" >> $GITHUB_OUTPUT
+          echo "client_id_name=$client_id_name" >> $GITHUB_OUTPUT
+
+      - name: Azure Login
+        uses: bitwarden/gh-actions/azure-login@main
+        with:
+          subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          client_id: ${{ secrets[steps.setup.outputs.client_id_name] }}
+
+      - name: Get Azure Key Vault secrets org
+        uses: bitwarden/gh-actions/get-keyvault-secrets@main
+        with:
+          keyvault: gh-org-bitwarden
+          secrets: "BW-GHAPP-ID,BW-GHAPP-KEY"
+
+      - name: Get Azure Key Vault secrets repo
+        uses: bitwarden/gh-actions/get-keyvault-secrets@main
+        with:
+          keyvault: ${{ steps.setup.outputs.keyvault }}
+          secrets: "AZURE-APP-PUBLISH-PROFILE"
+
+      - name: Validate webapp access
+        env:
+          _ENVIRONMENT: ${{ matrix.environment}}
+          _APP_NAME: ${{ matrix.app }}
+          RG: "devtestpasswordless"
+          _DEVTEST_APP: lesspassword-api01
+          _DEVTEST_ADMIN: lesspassword-adminconsole01
+          _QA_APP: passwordless-api-qa
+          _QA_ADMIN: passwordless-admin-qa
+          _PROD_APP: passwordless-api-01-prod
+          _PROD_ADMIN: passwordless-adminconsole-01-prod
+        run: |
+          case "$_ENVIRONMENT=$_APP_NAME" in
+            "devtest=Api")
+              RG="devtestpasswordless"
+              _APP_NAME=$_DEVTEST_APP
+              ;;
+            "devtest=AdminConsole")
+              RG="devtestpasswordless"
+              _APP_NAME=$_DEVTEST_ADMIN
+              ;;
+            "qa=Api")
+              RG="rg-core-passwordless-new-qa"
+              _APP_NAME=$_QA_APP
+              ;;
+            "qa=AdminConsole")
+              RG="rg-core-passwordless-new-qa"
+              _APP_NAME=$_QA_ADMIN
+              ;;
+            "prod=Api")
+              RG="prod-eu-west"
+              _APP_NAME=$_PROD_APP
+              ;;
+            "prod=AdminConsole")
+              RG="prod-eu-west"
+              _APP_NAME=$_PROD_ADMIN
+              ;;
+            *)
+              echo "Unknown environment: $_ENVIRONMENT"
+              exit 1
+              ;;
+          esac
+          echo "Using Environment: $_ENVIRONMENT"
+          echo "Using Resource Group: $RG"
+          echo "Using App Name: $_APP_NAME"
+          az webapp show -n $_DEVTEST_APP -g $RG -s staging
+
+      - name: Azure Logout
+        uses: bitwarden/gh-actions/azure-logout@main
+
+  bre-831-validate-clients:
+    name: BRE-831 Validate Clients
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+    if: ${{ github.repository == 'bitwarden/clients' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        environment:
+          # - USQA
+          # - EUQA
+          # - USPROD
+          # - EUPROD
+          - USDEV
+    steps:
+      - name: Configure
+        id: config
+        env:
+          _ENVIRONMENT: ${{ matrix.environment }}
+        run: |
+
+          case ${{ inputs.environment }} in
+            "USQA")
+              echo "azure_login_client_key_name=AZURE_CLIENT_ID_USQA" >> $GITHUB_OUTPUT
+              echo "retrive_secrets_keyvault=bw-webvault-rlktusqa-kv" >> $GITHUB_OUTPUT
+              ;;
+            "EUQA")
+              echo "azure_login_client_key_name=AZURE_CLIENT_ID_EUQA" >> $GITHUB_OUTPUT
+              echo "retrive_secrets_keyvault=webvaulteu-westeurope-qa" >> $GITHUB_OUTPUT
+              ;;
+            "USPROD")
+              echo "azure_login_client_key_name=AZURE_CLIENT_ID_USPROD" >> $GITHUB_OUTPUT
+              echo "retrive_secrets_keyvault=bw-webvault-klrt-kv" >> $GITHUB_OUTPUT
+              ;;
+            "EUPROD")
+              echo "azure_login_client_key_name=AZURE_CLIENT_ID_EUPROD" >> $GITHUB_OUTPUT
+              echo "retrive_secrets_keyvault=webvault-westeurope-prod" >> $GITHUB_OUTPUT
+              ;;
+            "USDEV")
+              echo "azure_login_client_key_name=AZURE_CLIENT_ID_USDEV" >> $GITHUB_OUTPUT
+              echo "retrive_secrets_keyvault=webvault-eastus-dev" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Login to Azure
+        uses: bitwarden/gh-actions/azure-login@main
+        with:
+          subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          client_id: ${{ secrets[needs.setup.outputs.azure_login_client_key_name] }}
+
+      - name: Validate Secret Retrieval
+        uses: bitwarden/gh-actions/get-keyvault-secrets@main
+        with:
+          keyvault: ${{ needs.setup.outputs.retrive_secrets_keyvault }}
+          secrets: "sa-bitwarden-web-vault-dev-key-temp,sa-bitwarden-web-vault-name,sp-bitwarden-web-vault-password,sp-bitwarden-web-vault-appid,sp-bitwarden-web-vault-tenant"
+
+      - name: Log out from Azure
+        if: ${{ steps.download-latest-artifacts.outcome == 'failure' }}
+        uses: bitwarden/gh-actions/azure-logout@main
 
 
   # bre-831:
