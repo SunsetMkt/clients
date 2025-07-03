@@ -241,15 +241,16 @@ jobs:
         if: ${{ steps.setup.outputs.STORAGE_CONTAINERS != '' }}
         env:
           CONTAINER_NAMES: ${{ steps.setup.outputs.STORAGE_CONTAINERS }}
+          ACCOUNT_NAME: bitwardenci
         run: |
           for container_name in $CONTAINER_NAMES; do
             echo "Validating read access to container '$container_name' in storage account '$ACCOUNT_NAME'..."
             case "$container_name" in
                 mobile)
-                    az storage blob exists --account-name bitwardenci --container-name mobile --name store_fdroid-keystore.jks --output none
+                    az storage blob exists --account-name $ACCOUNT_NAME --container-name mobile --name store_fdroid-keystore.jks --output none
                     ;;
                 profiles)
-                    az storage blob exists --account-name bitwardenci --container-name profiles --name dist_authenticator.mobileprovision --output none
+                    az storage blob exists --account-name $ACCOUNT_NAME --container-name profiles --name dist_authenticator.mobileprovision --output none
                     ;;
                 *)
                     echo "    Unknown container: $container_name"
