@@ -7,259 +7,259 @@ on:
 permissions: {}
 
 jobs:
-  bre-831-validate:
-    runs-on: ubuntu-24.04
-    permissions:
-      id-token: write
-    steps:
-      - name: setup
-        id: setup
-        run: |
-          repo_with_owner=${{ github.repository }}
-          repo=$(echo "$repo_with_owner" | cut -d'/' -f2)
+  # bre-831-validate:
+  #   runs-on: ubuntu-24.04
+  #   permissions:
+  #     id-token: write
+  #   steps:
+  #     - name: setup
+  #       id: setup
+  #       run: |
+  #         repo_with_owner=${{ github.repository }}
+  #         repo=$(echo "$repo_with_owner" | cut -d'/' -f2)
 
-          case "$repo" in
-              browser-interactions-testing)
-                  key_vault="gh-browser-interactions"
-                  ;;
-              bw-analytics-infrastructure)
-                  key_vault="gh-bw-analytics-infra"
-                  ;;
-              bw-analytics-notebooks)
-                  key_vault="gh-bw-analytics"
-                  ;;
-              bw-analytics-utilities)
-                  key_vault="gh-bw-analytics-util"
-                  ;;
-              mobile-learning-sandbox)
-                  key_vault="gh-mobile-learning"
-                  ;;
-              passwordless-client-js)
-                  key_vault="gh-passwordless-client"
-                  ;;
-              terraform-provider-bitwarden-sm)
-                  key_vault="gh-terraform-provider"
-                  ;;
-              passwordless-demo-backend)
-                  key_vault="gh-passwordless-demo"
-                  ;;
-              *)
-                  key_vault=$(echo "gh-$repo" | sed 's/[^A-Za-z0-9\-]/-/g' | tr '[:upper:]' '[:lower:]')
-                  ;;
-          esac
+  #         case "$repo" in
+  #             browser-interactions-testing)
+  #                 key_vault="gh-browser-interactions"
+  #                 ;;
+  #             bw-analytics-infrastructure)
+  #                 key_vault="gh-bw-analytics-infra"
+  #                 ;;
+  #             bw-analytics-notebooks)
+  #                 key_vault="gh-bw-analytics"
+  #                 ;;
+  #             bw-analytics-utilities)
+  #                 key_vault="gh-bw-analytics-util"
+  #                 ;;
+  #             mobile-learning-sandbox)
+  #                 key_vault="gh-mobile-learning"
+  #                 ;;
+  #             passwordless-client-js)
+  #                 key_vault="gh-passwordless-client"
+  #                 ;;
+  #             terraform-provider-bitwarden-sm)
+  #                 key_vault="gh-terraform-provider"
+  #                 ;;
+  #             passwordless-demo-backend)
+  #                 key_vault="gh-passwordless-demo"
+  #                 ;;
+  #             *)
+  #                 key_vault=$(echo "gh-$repo" | sed 's/[^A-Za-z0-9\-]/-/g' | tr '[:upper:]' '[:lower:]')
+  #                 ;;
+  #         esac
 
-          check_ci_kv="false"
-          if [[ "$repo" == "android" || \
-            "$repo" == "clients" || \
-            "$repo" == "credential-exchange" || \
-            "$repo" == "devops" || \
-            "$repo" == "directory-connector" || \
-            "$repo" == "ephemeral-environment-charts" || \
-            "$repo" == "f-droid" || \
-            "$repo" == "gh-actions" || \
-            "$repo" == "Handlebars.conf" || \
-            "$repo" == "helm-charts" || \
-            "$repo" == "ios" || \
-            "$repo" == "key-connector" || \
-            "$repo" == "mobile-learning-sandbox" || \
-            "$repo" == "passwordless-devops" || \
-            "$repo" == "passwordless-dotnet" || \
-            "$repo" == "passwordless-server" || \
-            "$repo" == "reference-events" || \
-            "$repo" == "sdk-internal" || \
-            "$repo" == "sdk-sm" || \
-            "$repo" == "self-host" || \
-            "$repo" == "server" || \
-            "$repo" == "sm-ansible" || \
-            "$repo" == "sm-kubernetes" || \
-            "$repo" == "splunk" || \
-            "$repo" == "workflow-linter" ]]; then
-            check_ci_kv="true"
-          fi
-          echo "CHECK_CI_KV=${check_ci_kv}" >> $GITHUB_OUTPUT
-          echo "keyvault=${key_vault}" >> $GITHUB_OUTPUT
+  #         check_ci_kv="false"
+  #         if [[ "$repo" == "android" || \
+  #           "$repo" == "clients" || \
+  #           "$repo" == "credential-exchange" || \
+  #           "$repo" == "devops" || \
+  #           "$repo" == "directory-connector" || \
+  #           "$repo" == "ephemeral-environment-charts" || \
+  #           "$repo" == "f-droid" || \
+  #           "$repo" == "gh-actions" || \
+  #           "$repo" == "Handlebars.conf" || \
+  #           "$repo" == "helm-charts" || \
+  #           "$repo" == "ios" || \
+  #           "$repo" == "key-connector" || \
+  #           "$repo" == "mobile-learning-sandbox" || \
+  #           "$repo" == "passwordless-devops" || \
+  #           "$repo" == "passwordless-dotnet" || \
+  #           "$repo" == "passwordless-server" || \
+  #           "$repo" == "reference-events" || \
+  #           "$repo" == "sdk-internal" || \
+  #           "$repo" == "sdk-sm" || \
+  #           "$repo" == "self-host" || \
+  #           "$repo" == "server" || \
+  #           "$repo" == "sm-ansible" || \
+  #           "$repo" == "sm-kubernetes" || \
+  #           "$repo" == "splunk" || \
+  #           "$repo" == "workflow-linter" ]]; then
+  #           check_ci_kv="true"
+  #         fi
+  #         echo "CHECK_CI_KV=${check_ci_kv}" >> $GITHUB_OUTPUT
+  #         echo "keyvault=${key_vault}" >> $GITHUB_OUTPUT
 
-          check_acr="false"
-          if [[ "$repo" == "billing-pricing" || \
-            "$repo" == "billing-relay" || \
-            "$repo" == "botwarden" || \
-            "$repo" == "clients" || \
-            "$repo" == "customer-success" || \
-            "$repo" == "darkweb-parser" || \
-            "$repo" == "devops" || \
-            "$repo" == "Fig-CLI-Integration" || \
-            "$repo" == "key-connector" || \
-            "$repo" == "passwordless-devops" || \
-            "$repo" == "sdk-sm" || \
-            "$repo" == "self-host" || \
-            "$repo" == "server" || \
-            "$repo" == "sm-kubernetes" || \
-            "$repo" == "workflow-linter" ]]; then
-            check_acr="true"
-          fi
-          echo "CHECK_ACR=${check_acr}" >> $GITHUB_OUTPUT
+  #         check_acr="false"
+  #         if [[ "$repo" == "billing-pricing" || \
+  #           "$repo" == "billing-relay" || \
+  #           "$repo" == "botwarden" || \
+  #           "$repo" == "clients" || \
+  #           "$repo" == "customer-success" || \
+  #           "$repo" == "darkweb-parser" || \
+  #           "$repo" == "devops" || \
+  #           "$repo" == "Fig-CLI-Integration" || \
+  #           "$repo" == "key-connector" || \
+  #           "$repo" == "passwordless-devops" || \
+  #           "$repo" == "sdk-sm" || \
+  #           "$repo" == "self-host" || \
+  #           "$repo" == "server" || \
+  #           "$repo" == "sm-kubernetes" || \
+  #           "$repo" == "workflow-linter" ]]; then
+  #           check_acr="true"
+  #         fi
+  #         echo "CHECK_ACR=${check_acr}" >> $GITHUB_OUTPUT
 
 
-          storage_account_containers=""
-          case "$repo" in
-            android|f-droid)
-              storage_account_containers="mobile"
-              ;;
-            clients)
-              storage_account_containers="profiles"
-              ;;
-            ios)
-              storage_account_containers="profiles mobile"
-              ;;
-            mobile-learning-sandbox)
-              storage_account_containers="profiles"
-              ;;
-          esac
-          echo "STORAGE_CONTAINERS=${storage_account_containers}" >> $GITHUB_OUTPUT
+  #         storage_account_containers=""
+  #         case "$repo" in
+  #           android|f-droid)
+  #             storage_account_containers="mobile"
+  #             ;;
+  #           clients)
+  #             storage_account_containers="profiles"
+  #             ;;
+  #           ios)
+  #             storage_account_containers="profiles mobile"
+  #             ;;
+  #           mobile-learning-sandbox)
+  #             storage_account_containers="profiles"
+  #             ;;
+  #         esac
+  #         echo "STORAGE_CONTAINERS=${storage_account_containers}" >> $GITHUB_OUTPUT
 
-          echo "Repo Name: "$repo"
-          echo "Key Vault Name: "$key_vault"
-          echo "Check CI KV: $check_ci_kv"
-          echo "Check ACR: $check_acr"
-          echo "Storage Containers: $storage_account_containers"
+  #         echo "Repo Name: "$repo"
+  #         echo "Key Vault Name: "$key_vault"
+  #         echo "Check CI KV: $check_ci_kv"
+  #         echo "Check ACR: $check_acr"
+  #         echo "Storage Containers: $storage_account_containers"
 
-      - name: Azure Login
-        id: azure-login
-        uses: bitwarden/gh-actions/azure-login@main
-        with:
-          subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          tenant_id: ${{ secrets.AZURE_TENANT_ID }}
-          client_id: ${{ secrets.AZURE_CLIENT_ID }}
+  #     - name: Azure Login
+  #       id: azure-login
+  #       uses: bitwarden/gh-actions/azure-login@main
+  #       with:
+  #         subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  #         tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+  #         client_id: ${{ secrets.AZURE_CLIENT_ID }}
 
-      - name: Org KV
-        id: get-kv-secrets
-        uses: bitwarden/gh-actions/get-keyvault-secrets@main
-        with:
-          keyvault: gh-org-bitwarden
-          secrets: "test-secret-1"
+  #     - name: Org KV
+  #       id: get-kv-secrets
+  #       uses: bitwarden/gh-actions/get-keyvault-secrets@main
+  #       with:
+  #         keyvault: gh-org-bitwarden
+  #         secrets: "test-secret-1"
 
-      - name: CI KV
-        id: retrieve-secrets
-        if: ${{ steps.setup.outputs.CHECK_CI_KV == 'true' }}
-        uses: bitwarden/gh-actions/get-keyvault-secrets@main
-        with:
-          keyvault: bitwarden-ci
-          secrets: "test-secret-1"
+  #     - name: CI KV
+  #       id: retrieve-secrets
+  #       if: ${{ steps.setup.outputs.CHECK_CI_KV == 'true' }}
+  #       uses: bitwarden/gh-actions/get-keyvault-secrets@main
+  #       with:
+  #         keyvault: bitwarden-ci
+  #         secrets: "test-secret-1"
 
-      - name: Fastly compute KV
-        if: ${{ github.repository == 'bitwarden/fastly-compute' }}
-        uses: bitwarden/gh-actions/get-keyvault-secrets@main
-        with:
-          keyvault: fastly-cicd-eastus-prod
-          secrets: "FASTLY-API-TOKEN"
+  #     - name: Fastly compute KV
+  #       if: ${{ github.repository == 'bitwarden/fastly-compute' }}
+  #       uses: bitwarden/gh-actions/get-keyvault-secrets@main
+  #       with:
+  #         keyvault: fastly-cicd-eastus-prod
+  #         secrets: "FASTLY-API-TOKEN"
 
-      - name: Validate fastly compute
-        if: ${{ github.repository == 'bitwarden/fastly-compute' }}
-        run: |
+  #     - name: Validate fastly compute
+  #       if: ${{ github.repository == 'bitwarden/fastly-compute' }}
+  #       run: |
 
-      - name: ACR Login Validation
-        if: ${{ steps.setup.outputs.CHECK_ACR == 'true' }}
-        run: |
-          az acr login -n bitwardenprod
+  #     - name: ACR Login Validation
+  #       if: ${{ steps.setup.outputs.CHECK_ACR == 'true' }}
+  #       run: |
+  #         az acr login -n bitwardenprod
 
-      - name: Validate Repo secrets
-        run: |
-          file="info.txt"
+  #     - name: Validate Repo secrets
+  #       run: |
+  #         file="info.txt"
 
-          cat <<'EOF' > $file
-          ${{ toJSON (secrets) }}
-          EOF
+  #         cat <<'EOF' > $file
+  #         ${{ toJSON (secrets) }}
+  #         EOF
 
-          exit_code=0
-          keyvault="${{ steps.setup.outputs.keyvault }}"
+  #         exit_code=0
+  #         keyvault="${{ steps.setup.outputs.keyvault }}"
 
-          set +e
-          for x in $(cat $file | jq -r 'to_entries[] | "\(.key)"' | grep -E -v "^(github_token|LD_|AZURE_|BW_GHAPP|CHECKMARX|SONAR)"); do
-              azureKey=$(echo "$x" | sed -r "s/_/-/g")
-              value="$(cat $file | jq -r --arg key "$x" '.[$key]')"
-              echo "Checking key: $x (Azure Key: $azureKey)"
-              azureValue=$(az keyvault secret show --vault-name $keyvault --name $azureKey --query "value" --output tsv 2>error.txt)
-              if [ $? -ne 0 ]; then
-                  cat error.txt | grep "Operation get is not allowed on a disabled secret"
-                  if [ $? -ne 0 ]; then
-                      echo "Failed to retrieve key: $x (Azure Key: $azureKey)"
-                      cat error.txt
-                      exit_code=1
-                  else
-                      echo "Key is disabled: $x (Azure Key: $azureKey)"
-                  fi
-                  continue
-              fi
-              if [ "$value" != "$azureValue" ]; then
-                  echo "Key does not match: $x (Azure Key: $azureKey)"
-                  exit_code=1
-              else
-                  echo "    Validated"
-              fi
-          done
-          exit $exit_code
+  #         set +e
+  #         for x in $(cat $file | jq -r 'to_entries[] | "\(.key)"' | grep -E -v "^(github_token|LD_|AZURE_|BW_GHAPP|CHECKMARX|SONAR)"); do
+  #             azureKey=$(echo "$x" | sed -r "s/_/-/g")
+  #             value="$(cat $file | jq -r --arg key "$x" '.[$key]')"
+  #             echo "Checking key: $x (Azure Key: $azureKey)"
+  #             azureValue=$(az keyvault secret show --vault-name $keyvault --name $azureKey --query "value" --output tsv 2>error.txt)
+  #             if [ $? -ne 0 ]; then
+  #                 cat error.txt | grep "Operation get is not allowed on a disabled secret"
+  #                 if [ $? -ne 0 ]; then
+  #                     echo "Failed to retrieve key: $x (Azure Key: $azureKey)"
+  #                     cat error.txt
+  #                     exit_code=1
+  #                 else
+  #                     echo "Key is disabled: $x (Azure Key: $azureKey)"
+  #                 fi
+  #                 continue
+  #             fi
+  #             if [ "$value" != "$azureValue" ]; then
+  #                 echo "Key does not match: $x (Azure Key: $azureKey)"
+  #                 exit_code=1
+  #             else
+  #                 echo "    Validated"
+  #             fi
+  #         done
+  #         exit $exit_code
 
-      - name: Validate Org secrets
-        if: ${{ github.repository == 'bitwarden/bre-internal' }}
-        run: |
-          file="info.txt"
+  #     - name: Validate Org secrets
+  #       if: ${{ github.repository == 'bitwarden/bre-internal' }}
+  #       run: |
+  #         file="info.txt"
 
-          cat <<'EOF' > $file
-          ${{ toJSON (secrets) }}
-          EOF
+  #         cat <<'EOF' > $file
+  #         ${{ toJSON (secrets) }}
+  #         EOF
 
-          exit_code=0
-          keyvault="gh-org-bitwarden"
+  #         exit_code=0
+  #         keyvault="gh-org-bitwarden"
 
-          set +e
-          for x in $(cat $file | jq -r 'to_entries[] | "\(.key)"' | grep -E "^(BW_GHAPP|CHECKMARX|SONAR)"); do
-              azureKey=$(echo "$x" | sed -r "s/_/-/g")
-              value="$(cat $file | jq -r --arg key "$x" '.[$key]')"
-              echo "Checking key: $x (Azure Key: $azureKey)"
-              azureValue=$(az keyvault secret show --vault-name $keyvault --name $azureKey --query "value" --output tsv 2>error.txt)
-              if [ $? -ne 0 ]; then
-                  cat error.txt | grep "Operation get is not allowed on a disabled secret"
-                  if [ $? -ne 0 ]; then
-                      echo "Failed to retrieve key: $x (Azure Key: $azureKey)"
-                      cat error.txt
-                      exit_code=1
-                  else
-                      echo "Key is disabled: $x (Azure Key: $azureKey)"
-                  fi
-                  continue
-              fi
-              if [ "$value" != "$azureValue" ]; then
-                  echo "Key does not match: $x (Azure Key: $azureKey)"
-                  exit_code=1
-              else
-                  echo "    Validated"
-              fi
-          done
-          exit $exit_code
+  #         set +e
+  #         for x in $(cat $file | jq -r 'to_entries[] | "\(.key)"' | grep -E "^(BW_GHAPP|CHECKMARX|SONAR)"); do
+  #             azureKey=$(echo "$x" | sed -r "s/_/-/g")
+  #             value="$(cat $file | jq -r --arg key "$x" '.[$key]')"
+  #             echo "Checking key: $x (Azure Key: $azureKey)"
+  #             azureValue=$(az keyvault secret show --vault-name $keyvault --name $azureKey --query "value" --output tsv 2>error.txt)
+  #             if [ $? -ne 0 ]; then
+  #                 cat error.txt | grep "Operation get is not allowed on a disabled secret"
+  #                 if [ $? -ne 0 ]; then
+  #                     echo "Failed to retrieve key: $x (Azure Key: $azureKey)"
+  #                     cat error.txt
+  #                     exit_code=1
+  #                 else
+  #                     echo "Key is disabled: $x (Azure Key: $azureKey)"
+  #                 fi
+  #                 continue
+  #             fi
+  #             if [ "$value" != "$azureValue" ]; then
+  #                 echo "Key does not match: $x (Azure Key: $azureKey)"
+  #                 exit_code=1
+  #             else
+  #                 echo "    Validated"
+  #             fi
+  #         done
+  #         exit $exit_code
 
-      - name: Validate Storage accounts
-        if: ${{ steps.setup.outputs.STORAGE_CONTAINERS != '' }}
-        env:
-          CONTAINER_NAMES: ${{ steps.setup.outputs.STORAGE_CONTAINERS }}
-        run: |
-          for container_name in $CONTAINER_NAMES; do
-            echo "Validating read access to container '$container_name' in storage account '$ACCOUNT_NAME'..."
-            case "$container_name" in
-                mobile)
-                    az storage blob exists --account-name bitwardenci --container-name mobile --name store_fdroid-keystore.jks --output none
-                    ;;
-                profiles)
-                    az storage blob exists --account-name bitwardenci --container-name profiles --name dist_authenticator.mobileprovision --output none
-                    ;;
-                *)
-                    echo "    Unknown container: $container_name"
-                    exit 1
-                    ;;
-            esac
-          done
+  #     - name: Validate Storage accounts
+  #       if: ${{ steps.setup.outputs.STORAGE_CONTAINERS != '' }}
+  #       env:
+  #         CONTAINER_NAMES: ${{ steps.setup.outputs.STORAGE_CONTAINERS }}
+  #       run: |
+  #         for container_name in $CONTAINER_NAMES; do
+  #           echo "Validating read access to container '$container_name' in storage account '$ACCOUNT_NAME'..."
+  #           case "$container_name" in
+  #               mobile)
+  #                   az storage blob exists --account-name bitwardenci --container-name mobile --name store_fdroid-keystore.jks --output none
+  #                   ;;
+  #               profiles)
+  #                   az storage blob exists --account-name bitwardenci --container-name profiles --name dist_authenticator.mobileprovision --output none
+  #                   ;;
+  #               *)
+  #                   echo "    Unknown container: $container_name"
+  #                   exit 1
+  #                   ;;
+  #           esac
+  #         done
 
-      - name: Azure Logout
-        uses: bitwarden/gh-actions/azure-logout@main
+  #     - name: Azure Logout
+  #       uses: bitwarden/gh-actions/azure-logout@main
 
 
   bre-831-validate-pwdless-devops:
@@ -461,7 +461,7 @@ jobs:
         with:
           subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           tenant_id: ${{ secrets.AZURE_TENANT_ID }}
-          client_id: ${{ secrets.AZURE_CLIENT_ID_USDEV }}
+          client_id: ${{ secrets[steps.config.outputs.azure_login_client_key_name] }}
 
       - name: Validate Secret Retrieval
         uses: bitwarden/gh-actions/get-keyvault-secrets@main
