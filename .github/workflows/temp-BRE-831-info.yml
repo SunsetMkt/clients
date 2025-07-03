@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
-    if: false
     steps:
       - name: setup
         id: setup
@@ -278,7 +277,7 @@ jobs:
         environment:
           - devtest
           - qa
-          #- prod
+          - prod
     steps:
       - name: Setup Azure Key Vault Name
         id: setup
@@ -327,7 +326,7 @@ jobs:
           echo "keyvault=$keyvault" >> $GITHUB_OUTPUT
           echo "client_id_name=$client_id_name" >> $GITHUB_OUTPUT
 
-      - name: Azure Login
+      - name: Azure Login - KV
         uses: bitwarden/gh-actions/azure-login@main
         with:
           subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -345,6 +344,16 @@ jobs:
         with:
           keyvault: ${{ steps.setup.outputs.keyvault }}
           secrets: "AZURE-APP-PUBLISH-PROFILE"
+
+      - name: Azure Logout
+        uses: bitwarden/gh-actions/azure-logout@main
+
+      - name: Azure Login - WebApp
+        uses: bitwarden/gh-actions/azure-login@main
+        with:
+          subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID_PASSWORDLESS }}
+          tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          client_id: ${{ secrets[steps.setup.outputs.client_id_name] }}
 
       - name: Validate webapp access
         env:
@@ -391,7 +400,8 @@ jobs:
           echo "Using Environment: $_ENVIRONMENT"
           echo "Using Resource Group: $RG"
           echo "Using App Name: $_APP_NAME"
-          az webapp show -n $_DEVTEST_APP -g $RG -s staging
+          az webapp show -n $_APP_NAME -g $RG -s staging --output none
+
 
       - name: Azure Logout
         uses: bitwarden/gh-actions/azure-logout@main
@@ -421,30 +431,30 @@ jobs:
           case "$_ENVIRONMENT" in
             "USQA")
               echo "azure_login_client_key_name=AZURE_CLIENT_ID_USQA" >> $GITHUB_OUTPUT
-              echo "retrive_secrets_keyvault=bw-webvault-rlktusqa-kv" >> $GITHUB_OUTPUT
+              echo "retrieve_secrets_keyvault=bw-webvault-rlktusqa-kv" >> $GITHUB_OUTPUT
               ;;
             "EUQA")
               echo "azure_login_client_key_name=AZURE_CLIENT_ID_EUQA" >> $GITHUB_OUTPUT
-              echo "retrive_secrets_keyvault=webvaulteu-westeurope-qa" >> $GITHUB_OUTPUT
+              echo "retrieve_secrets_keyvault=webvaulteu-westeurope-qa" >> $GITHUB_OUTPUT
               ;;
             "USPROD")
               echo "azure_login_client_key_name=AZURE_CLIENT_ID_USPROD" >> $GITHUB_OUTPUT
-              echo "retrive_secrets_keyvault=bw-webvault-klrt-kv" >> $GITHUB_OUTPUT
+              echo "retrieve_secrets_keyvault=bw-webvault-klrt-kv" >> $GITHUB_OUTPUT
               ;;
             "EUPROD")
               echo "azure_login_client_key_name=AZURE_CLIENT_ID_EUPROD" >> $GITHUB_OUTPUT
-              echo "retrive_secrets_keyvault=webvault-westeurope-prod" >> $GITHUB_OUTPUT
+              echo "retrieve_secrets_keyvault=webvault-westeurope-prod" >> $GITHUB_OUTPUT
               ;;
             "USDEV")
               echo "azure_login_client_key_name=AZURE_CLIENT_ID_USDEV" >> $GITHUB_OUTPUT
-              echo "retrive_secrets_keyvault=webvault-eastus-dev" >> $GITHUB_OUTPUT
+              echo "retrieve_secrets_keyvault=webvault-eastus-dev" >> $GITHUB_OUTPUT
               ;;
           esac
 
       - name: Setup Values
         run: |
           echo "Azure Login Client Key Name: ${{ steps.config.outputs.azure_login_client_key_name }}"
-          echo "Key Vault to retrieve secrets: ${{ steps.config.outputs.retrive_secrets_keyvault }}"
+          echo "Key Vault to retrieve secrets: ${{ steps.config.outputs.retrieve_secrets_keyvault }}"
 
       - name: Login to Azure
         uses: bitwarden/gh-actions/azure-login@main
@@ -456,11 +466,84 @@ jobs:
       - name: Validate Secret Retrieval
         uses: bitwarden/gh-actions/get-keyvault-secrets@main
         with:
-          keyvault: ${{ steps.config.outputs.retrive_secrets_keyvault }}
+          keyvault: ${{ steps.config.outputs.retrieve_secrets_keyvault }}
           secrets: "sa-bitwarden-web-vault-dev-key-temp,sa-bitwarden-web-vault-name,sp-bitwarden-web-vault-password,sp-bitwarden-web-vault-appid,sp-bitwarden-web-vault-tenant"
 
       - name: Log out from Azure
         uses: bitwarden/gh-actions/azure-logout@main
+
+  bre-831-validate-devops:
+    name: BRE-831 Validate Devops
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+    if: ${{ github.repository == 'bitwarden/devops' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        environment:
+          - "US-DEV Cloud"
+          - "EU-QA Cloud"
+          - "US-QA Cloud"
+          - "EU-PRD Cloud"
+          - "US-PRD Cloud"
+    steps:
+      - name: Determine Azure Key Vault Info
+        id: determine-keyvault-info
+        env:
+          _ENVIRONMENT: ${{ matrix.environment }}
+        run: |
+          keyvault_name=""
+          client_id_key=""
+          case "$_ENVIRONMENT" in
+            "US-DEV Cloud")
+              keyvault_name="devops-us-dev-cloud"
+              client_id_key="AZURE_CLIENT_ID_USDEV"
+              ;;
+            "EU-QA Cloud")
+              keyvault_name="devops-eu-qa-cloud"
+              client_id_key="AZURE_CLIENT_ID_EUQA"
+              ;;
+            "US-QA Cloud")
+              keyvault_name="devops-us-qa-cloud"
+              client_id_key="AZURE_CLIENT_ID_USQA"
+              ;;
+            "EU-PRD Cloud")
+              keyvault_name="devops-eu-prd-cloud"
+              client_id_key="AZURE_CLIENT_ID_EUPRD"
+              ;;
+            "US-PRD Cloud")
+              keyvault_name="devops-us-prd-cloud"
+              client_id_key="AZURE_CLIENT_ID_USPRD"
+              ;;
+            *)
+              echo "Unknown environment: $_ENVIRONMENT"
+              exit 1
+              ;;
+          esac
+
+          echo "Environment Key Vault Name: $keyvault_name"
+          echo "Client ID Key: $client_id_key"
+          echo "keyvault_name=$keyvault_name" >> $GITHUB_OUTPUT
+          echo "client_id_key=$client_id_key" >> $GITHUB_OUTPUT
+
+      - name: Log in to Azure
+        uses: bitwarden/gh-actions/azure-login@main
+        with:
+          subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          client_id: "${{ steps.determine-keyvault-info.outputs.client_id_key }}"
+
+      - name: Get Azure Key Vault secrets
+        id: get-kv-secrets
+        uses: bitwarden/gh-actions/get-keyvault-secrets@main
+        with:
+          keyvault: "${{ steps.determine-keyvault-info.outputs.keyvault_name}}"
+          secrets: "MSSQL-CONN-STRING"
+
+      - name: Log out from Azure
+        uses: bitwarden/gh-actions/azure-logout@main
+
 
 
   # bre-831:
