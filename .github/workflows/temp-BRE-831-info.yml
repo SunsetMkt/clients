@@ -461,7 +461,7 @@ jobs:
         with:
           subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           tenant_id: ${{ secrets.AZURE_TENANT_ID }}
-          client_id: ${{ secrets[steps.config.outputs.azure_login_client_key_name] }}
+          client_id: ${{ secrets.AZURE_CLIENT_ID_USDEV }}
 
       - name: Validate Secret Retrieval
         uses: bitwarden/gh-actions/get-keyvault-secrets@main
